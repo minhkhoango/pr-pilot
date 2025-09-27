@@ -10,11 +10,10 @@ WORKDIR /app
 COPY pyproject.toml poetry.lock* ./
 
 # Install project dependencies
-# We use poetry to manage dependencies, but could also use pip with requirements.txt
 # Ensure poetry is installed
 RUN pip install poetry
 # Install dependencies using poetry
-RUN poetry config virtualenvs.create false && poetry install --no-dev --no-interaction --no-ansi
+RUN poetry config virtualenvs.create false && poetry install --without-dev --no-interaction --no-ansi
 
 # Copy the rest of the application's code into the container
 COPY src/ /app/src
