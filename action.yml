@@ -1,0 +1,12 @@
+name: 'PR-Pilot Briefing'
+description: 'Generate AI-powered PR briefings using Gemini'
+inputs:
+  github-token:
+    description: 'GitHub token for API access'
+    required: true
+  google-api-key:
+    description: 'Google API key for Gemini'
+    required: true
+runs:
+  using: 'docker'
+  image: 'Dockerfile'

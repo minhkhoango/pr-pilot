@@ -1,17 +1,74 @@
 #!/bin/sh -l
 
 # entrypoint.sh
-# This script will eventually be responsible for getting the PR diff
-# from the GitHub context and calling the Python tool.
+# This script orchestrates the entire action. It uses the GitHub API
+# to fetch the pull request diff and post the generated briefing back as a comment.
 
-echo "🚀 PR-Pilot is running!"
+set -e # Exit immediately if a command exits with a non-zero status.
 
-# Placeholder for future logic:
-# 1. Get PR number from GitHub event payload.
-# 2. Use GitHub API with GITHUB_TOKEN to fetch the .diff for the PR.
-# 3. Save the diff to a temporary file.
-# 4. Run the python script: python src/pr_pilot/main.py --diff-file /tmp/pr.diff
-# 5. Get the markdown output.
-# 6. Use GitHub API to post the markdown as a comment on the PR.
+# --- 1. Get Inputs & Environment ---
+# The GITHUB_TOKEN is automatically provided by GitHub.
+# The GITHUB_EVENT_PATH contains the JSON payload of the event that triggered the workflow.
+# We use `jq` (a command-line JSON processor) to parse this file.
+if [ -z "$GITHUB_TOKEN" ]; then
+    echo "Error: GITHUB_TOKEN is not set."
+    exit 1
+fi
 
-echo "✅ PR-Pilot execution finished (placeholder)."
+if [ -z "$INPUT_GOOGLE_API_KEY" ]; then
+    echo "Error: INPUT_GOOGLE_API_KEY is not set. Please add it to your repository secrets."
+    exit 1
+fi
+
+# Extract the API URL for the pull request from the event payload.
+PR_URL=$(jq -r ".pull_request.url" "$GITHUB_EVENT_PATH")
+if [ -z "$PR_URL" ]; then
+    echo "Error: Could not determine PR URL from event payload."
+    exit 1
+fi
+
+# The URL for posting comments is different from the main PR URL.
+PR_COMMENTS_URL=$(jq -r ".pull_request.comments_url" "$GITHUB_EVENT_PATH")
+
+
+# --- 2. Fetch the PR Diff ---
+echo "INFO: Fetching diff from ${PR_URL}.diff"
+# Use curl to request the diff format for the PR.
+# -H adds the necessary headers for authentication and specifying the format.
+# -L follows redirects.
+# -o saves the output to a file named 'pr.diff'.
+curl -s -L \
+  -H "Accept: application/vnd.github.v3.diff" \
+  -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+  "${PR_URL}" \
+  -o pr.diff
+
+echo "INFO: Diff saved to pr.diff"
+
+# --- 3. Run the Python Engine ---
+echo "INFO: Running PR-Pilot analysis..."
+# We pass the fetched diff file to our Python script and capture its stdout.
+# The INPUT_GOOGLE_API_KEY is passed as an environment variable to the python process.
+# We add a pre-comment header to the captured output.
+BRIEFING_HEADER="### 🚀 PR-Pilot Analysis (powered by Gemini)\n\n"
+BRIEFING_BODY=$(GOOGLE_API_KEY=$INPUT_GOOGLE_API_KEY python /app/src/pr_pilot/main.py --diff-file pr.diff)
+
+# Combine header and body
+BRIEFING_MARKDOWN="${BRIEFING_HEADER}${BRIEFING_BODY}"
+
+# --- 4. Post the Briefing as a Comment ---
+echo "INFO: Posting briefing to ${PR_COMMENTS_URL}"
+# We need to format the markdown content into a JSON payload.
+# The `body` key contains our comment.
+JSON_PAYLOAD=$(echo "$BRIEFING_MARKDOWN" | jq -R --slurp '{body: .}')
+
+# Use curl again to POST the JSON payload to the PR's comments URL.
+curl -s -L \
+  -X POST \
+  -H "Accept: application/vnd.github+json" \
+  -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+  -H "Content-Type: application/json" \
+  "${PR_COMMENTS_URL}" \
+  --data-raw "$JSON_PAYLOAD"
+
+echo "✅ PR-Pilot briefing posted successfully!"
