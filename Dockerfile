@@ -11,7 +11,7 @@ COPY pyproject.toml poetry.lock* ./
 
 # Install project dependencies
 # Ensure poetry is installed
-RUN pip install poetry
+RUN apt-get update && apt-get install -y jq && pip install poetry
 # Install dependencies using poetry
 RUN poetry config virtualenvs.create false && poetry install --only main --no-interaction --no-ansi --no-root
 
