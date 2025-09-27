@@ -7,11 +7,11 @@
 set -e # Exit immediately if a command exits with a non-zero status.
 
 # --- 1. Get Inputs & Environment ---
-# The GITHUB_TOKEN is automatically provided by GitHub.
+# The INPUT_GITHUB-TOKEN is automatically provided by GitHub.
 # The GITHUB_EVENT_PATH contains the JSON payload of the event that triggered the workflow.
 # We use `jq` (a command-line JSON processor) to parse this file.
-if [ -z "$GITHUB_TOKEN" ]; then
-    echo "Error: GITHUB_TOKEN is not set."
+if [ -z "$INPUT_GITHUB-TOKEN" ]; then
+    echo "Error: INPUT_GITHUB-TOKEN is not set."
     exit 1
 fi
 
@@ -39,7 +39,7 @@ echo "INFO: Fetching diff from ${PR_URL}.diff"
 # -o saves the output to a file named 'pr.diff'.
 curl -s -L \
   -H "Accept: application/vnd.github.v3.diff" \
-  -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+  -H "Authorization: Bearer ${INPUT_GITHUB-TOKEN}" \
   "${PR_URL}" \
   -o pr.diff
 
@@ -66,7 +66,7 @@ JSON_PAYLOAD=$(echo "$BRIEFING_MARKDOWN" | jq -R --slurp '{body: .}')
 curl -s -L \
   -X POST \
   -H "Accept: application/vnd.github+json" \
-  -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+  -H "Authorization: Bearer ${INPUT_GITHUB-TOKEN}" \
   -H "Content-Type: application/json" \
   "${PR_COMMENTS_URL}" \
   --data-raw "$JSON_PAYLOAD"
