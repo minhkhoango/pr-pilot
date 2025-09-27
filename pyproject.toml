@@ -1,0 +1,22 @@
+[project]
+name = "pr-pilot"
+version = "0.1.0"
+description = "An AI-powered briefing officer for your pull requests."
+authors = [
+    {name = "Khoa Ngo",email = "ngominhkhoa2006@gmail.com"}
+]
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "google-generativeai (>=0.8.5,<0.9.0)",
+    "python-dotenv (>=1.1.1,<2.0.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.group.dev.dependencies]
+black = "^25.9.0"
+

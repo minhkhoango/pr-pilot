@@ -1,0 +1,13 @@
+# Byte-compiled
+pycache/
+
+# Unit test
+.cache
+.pytest_cache/
+
+# Dotenv
+.env
+
+# Virtual environment
+.venv/
+venv/
