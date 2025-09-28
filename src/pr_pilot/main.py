@@ -4,7 +4,7 @@ import argparse
 import json
 import sys
 import logging
-from typing import Dict, Any, List
+from typing import List, TypedDict, Literal
 
 from google.generativeai.generative_models import GenerativeModel
 from google.generativeai.client import configure  # type: ignore
@@ -13,6 +13,29 @@ from dotenv import load_dotenv
 # --- Constants ---
 # Using the latest Flash model available.
 MODEL_NAME = "gemini-2.5-flash-lite"
+
+
+# --- Type Definitions ---
+class RiskAssessment(TypedDict):
+    level: Literal["Low", "Medium", "High", "Unknown"]
+    reasoning: str
+
+
+class ChangeDetail(TypedDict):
+    type: Literal["Added", "Modified", "Removed", "Refactored", "Unknown"]
+    item: str
+    details: List[str]
+
+
+class FileChange(TypedDict):
+    file_name: str
+    changes: List[ChangeDetail]
+
+
+class PRBriefing(TypedDict):
+    summary: str
+    file_changes: List[FileChange]
+    risk_assessment: RiskAssessment
 
 
 def generate_prompt(diff_content: str) -> str:
@@ -32,19 +55,24 @@ def generate_prompt(diff_content: str) -> str:
     The JSON object must follow this exact schema:
     {{
         "summary": "A single, concise sentence summarizing the PR's core purpose.",
-        "changes": [
+        "file_changes": [
             {{
-                "type": "Added|Modified|Removed|Refactored",
-                "item": "A description of the high-level item (e.g., `JsonStore` class, a specific function).",
-                "details": [
-                    "A very short, bullet-point description of a sub-change (e.g., `__init__`: Loads data, `save()`: Persists data)."
+                "file_name": "Name of the file that was changed",
+                "changes": [
+                    {{
+                        "type": "Added|Modified|Removed|Refactored",
+                        "item": "A description of the high-level item (e.g., `JsonStore` class, a specific function).",
+                        "details": [
+                            "A very short, bullet-point description of a sub-change (e.g., `__init__`: Loads data, `save()`: Persists data)."
+                        ]
+                    }}
                 ]
             }}
-      ],
-      "risk_assessment": {{
-        "level": "Low|Medium|High",
-        "reasoning": "A brief, single-sentence explanation for the assigned risk level."
-      }}
+        ],
+        "risk_assessment": {{
+            "level": "Low|Medium|High",
+            "reasoning": "A brief, single-sentence explanation for the assigned risk level."
+        }}
     }}
 
     CRITICAL RULES:
@@ -80,7 +108,7 @@ def load_diff_file(file_path: str) -> str:
         raise
 
 
-def generate_briefing(diff_content: str, api_key: str | None) -> Dict[str, Any]:
+def generate_briefing(diff_content: str, api_key: str | None) -> PRBriefing:
     """
     Calls the Gemini API to generate the PR briefing.
 
@@ -115,7 +143,7 @@ def generate_briefing(diff_content: str, api_key: str | None) -> Dict[str, Any]:
         raise
 
 
-def format_markdown_briefing(briefing_data: Dict[str, Any]) -> str:
+def format_markdown_briefing(briefing_data: PRBriefing) -> str:
     """
     Formats the briefing data into a clean markdown string.
 
@@ -133,15 +161,15 @@ def format_markdown_briefing(briefing_data: Dict[str, Any]) -> str:
         "#### 🗂️ **File-by-File Breakdown**\n",
     ]
 
-    file_changes: List[Dict[str, Any]] = briefing_data.get("file_changes", [])
+    file_changes = briefing_data.get("file_changes", [])
     if not file_changes:
         lines.append("*No file changes were detailed.")
     else:
         for file_change in file_changes:
             lines.append(f"- **`{file_change.get('file_name', 'Unknown file')}`**")
-            changes: List[Dict[str, Any]] = file_change.get("changes", [])
+            changes = file_change.get("changes", [])
             for change in changes:
-                change_type = change.get("type", "")
+                change_type = change.get("type", "Unknown")
                 item = change.get("item", "No item description.")
                 lines.append(f"  - **{change_type}:** {item}")
                 details = change.get("details", [])
