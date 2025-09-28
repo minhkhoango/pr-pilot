@@ -36,7 +36,7 @@ def generate_prompt(diff_content: str) -> str:
         {{
           "file_name": "The full path of the file that was changed.",
           "changes": [
-            "A very short, bullet-point description of a specific change. Start with 'Added:', 'Modified:', 'Removed:', or 'Refactored:'."
+            "A high-level summary of the logical changes in this file. Start with 'Added:', 'Modified:', 'Removed:', or 'Refactored:'."
           ]
         }}
       ],
@@ -47,9 +47,10 @@ def generate_prompt(diff_content: str) -> str:
     }}
 
     CRITICAL RULES:
-    1.  **BE CONCISE.** Every description must be as short as possible. No long paragraphs. Use sentence fragments where appropriate.
-    2.  **NO CONVERSATION.** Your entire output must be ONLY the JSON object. Do not include markdown, apologies, or any text before or after the JSON.
-    3.  **STICK TO THE FACTS.** Analyze only the provided diff. Do not infer intent or functionality beyond the code shown.
+    1.  **SUMMARIZE LOGICALLY.** Group related line-level changes into a single, high-level summary. For example, instead of listing every line modified to add logging, summarize it as "Integrated the `logging` module for structured error and info reporting."
+    2.  **BE CONCISE.** Every description must be as short as possible. No long paragraphs. Use sentence fragments where appropriate.
+    3.  **NO CONVERSATION.** Your entire output must be ONLY the JSON object. Do not include markdown, apologies, or any text before or after the JSON.
+    4.  **STICK TO THE FACTS.** Analyze only the provided diff. Do not infer intent or functionality beyond the code shown.
 
     Analyze this diff:
     ```diff
@@ -67,9 +68,6 @@ def load_diff_file(file_path: str) -> str:
 
     Returns:
         The content of the file as a string.
-
-    Raises:
-        FileNotFoundError: If the file does not exist.
     """
     logging.info(f"Loading diff file from '{file_path}'...")
     try:
@@ -175,6 +173,9 @@ def main() -> None:
 
     try:
         api_key: str | None = os.getenv("GOOGLE_API_KEY")
+        if not api_key:
+            raise ValueError("GOOGLE_API_KEY environment variable not found.")
+
         diff_content = load_diff_file(args.diff_file)
         briefing_json = generate_briefing(diff_content, api_key)
         markdown_output = format_markdown_briefing(briefing_json)
