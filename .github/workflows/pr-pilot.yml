@@ -8,6 +8,9 @@ on:
 jobs:
   briefing:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -18,3 +21,4 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
         env:
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
