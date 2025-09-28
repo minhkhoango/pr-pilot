@@ -1,8 +1,6 @@
 # .github/workflows/pr-pilot.yml
 name: PR-Pilot Briefing
 
-# This workflow runs on 'pull_request' events.
-# Specifically, when a PR is opened, synchronized (new commits pushed), or reopened.
 on:
   pull_request:
     types: [opened, synchronize, reopened]
@@ -11,16 +9,15 @@ jobs:
   briefing:
     runs-on: ubuntu-latest
     steps:
-      # Step 1: Check out the code of the repository.
-      # This makes your action's code available to the runner.
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # Step 2: Run your PR-Pilot action.
-      # 'uses: ./' tells GitHub to run the action defined in the root of this repository.
       - name: Generate PR Briefing
         uses: ./ # This refers to the action.yml in your repository root
         with:
-          # The GITHUB_TOKEN is automatically created by GitHub for authentication.
+          # The GITHUB_TOKEN is a required *input* for the action to use the API.
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          google-api-key: ${{ secrets.GOOGLE_API_KEY }}
+        env:
+          # The GOOGLE_API_KEY is an *environment variable* the python script needs.
+          # This is the correct way to pass it.
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
