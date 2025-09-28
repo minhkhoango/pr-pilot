@@ -15,9 +15,6 @@ jobs:
       - name: Generate PR Briefing
         uses: ./ # This refers to the action.yml in your repository root
         with:
-          # The GITHUB_TOKEN is a required *input* for the action to use the API.
           github-token: ${{ secrets.GITHUB_TOKEN }}
         env:
-          # The GOOGLE_API_KEY is an *environment variable* the python script needs.
-          # This is the correct way to pass it.
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
