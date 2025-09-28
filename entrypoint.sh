@@ -7,11 +7,11 @@
 set -e # Exit immediately if a command exits with a non-zero status.
 
 # --- 1. Get Inputs & Environment ---
-# The INPUT_GITHUB-TOKEN is automatically provided by GitHub.
+# The INPUT_GITHUB_TOKEN is automatically provided by GitHub.
 # The GITHUB_EVENT_PATH contains the JSON payload of the event that triggered the workflow.
 # We use `jq` (a command-line JSON processor) to parse this file.
-if [ -z "$INPUT_GITHUB-TOKEN" ]; then
-    echo "Error: INPUT_GITHUB-TOKEN is not set."
+if [ -z "$INPUT_GITHUB_TOKEN" ]; then
+    echo "Error: INPUT_GITHUB_TOKEN is not set."
     exit 1
 fi
 
@@ -37,13 +37,17 @@ echo "INFO: Fetching diff from ${PR_URL}.diff"
 # -H adds the necessary headers for authentication and specifying the format.
 # -L follows redirects.
 # -o saves the output to a file named 'pr.diff'.
-curl -s -L \
+HTTP_CODE=$(curl -s -L -w "%{http_code}" -o pr.diff \
   -H "Accept: application/vnd.github.v3.diff" \
-  -H "Authorization: Bearer ${INPUT_GITHUB-TOKEN}" \
-  "${PR_URL}" \
-  -o pr.diff
+  -H "Authorization: Bearer ${INPUT_GITHUB_TOKEN}" \
+  "${PR_URL}")
 
-echo "INFO: Diff saved to pr.diff"
+if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
+    echo "INFO: Diff saved to pr.diff"
+else
+    echo "❌ Failed to fetch PR diff. HTTP Status: $HTTP_CODE"
+    exit 1
+fi
 
 # --- 3. Run the Python Engine ---
 echo "INFO: Running PR-Pilot analysis..."
@@ -63,12 +67,23 @@ echo "INFO: Posting briefing to ${PR_COMMENTS_URL}"
 JSON_PAYLOAD=$(echo "$BRIEFING_MARKDOWN" | jq -R --slurp '{body: .}')
 
 # Use curl again to POST the JSON payload to the PR's comments URL.
-curl -s -L \
+# Check the HTTP response code to ensure the request succeeded.
+HTTP_STATUS=$(curl -s -L -w "%{http_code}" \
   -X POST \
   -H "Accept: application/vnd.github+json" \
-  -H "Authorization: Bearer ${INPUT_GITHUB-TOKEN}" \
+  -H "Authorization: Bearer ${INPUT_GITHUB_TOKEN}" \
   -H "Content-Type: application/json" \
   "${PR_COMMENTS_URL}" \
-  --data-raw "$JSON_PAYLOAD"
+  --data-raw "$JSON_PAYLOAD")
 
-echo "✅ PR-Pilot briefing posted successfully!"
+# Extract the response body (everything except the last 3 characters which are the status code)
+RESPONSE_BODY="${HTTP_STATUS%???}"
+HTTP_CODE="${HTTP_STATUS: -3}"
+
+if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
+    echo "✅ PR-Pilot briefing posted successfully!"
+else
+    echo "❌ Failed to post briefing. HTTP Status: $HTTP_CODE"
+    echo "Response: $RESPONSE_BODY"
+    exit 1
+fi
