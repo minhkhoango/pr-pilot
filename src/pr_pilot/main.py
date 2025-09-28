@@ -124,7 +124,6 @@ def format_markdown_briefing(briefing_data: Dict[str, Any]) -> str:
         A formatted markdown string.
     """
     lines = [
-        "**A high-level summary of changes to help you start your review.**",
         "\n---\n",
         "#### 📝 **Overall Summary**\n",
         briefing_data.get("summary", "No summary provided."),
