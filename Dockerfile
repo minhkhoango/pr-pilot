@@ -5,8 +5,8 @@ FROM python:3.13-slim
 # Set the working directory in the container
 WORKDIR /app
 
-# Install jq for parsing JSON in the entrypoint script
-RUN apt-get update && apt-get install -y jq && rm -rf /var/lib/apt/lists/*
+# Install jq for parsing JSON and curl for API requests in the entrypoint script
+RUN apt-get update && apt-get install -y jq curl && rm -rf /var/lib/apt/lists/*
 
 # Copy the requirements file into the container at /app
 # We copy pyproject.toml and other potential config files first
