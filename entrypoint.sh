@@ -10,8 +10,15 @@ set -e # Exit immediately if a command exits with a non-zero status.
 # The INPUT_GITHUB_TOKEN is automatically provided by GitHub.
 # The GITHUB_EVENT_PATH contains the JSON payload of the event that triggered the workflow.
 # We use `jq` (a command-line JSON processor) to parse this file.
+
+# Debug: Show available INPUT_ environment variables
+echo "DEBUG: Available INPUT_ environment variables:"
+env | grep "^INPUT_" || echo "No INPUT_ variables found"
+
 if [ -z "$INPUT_GITHUB_TOKEN" ]; then
     echo "Error: INPUT_GITHUB_TOKEN is not set."
+    echo "DEBUG: All environment variables:"
+    env | sort
     exit 1
 fi
 
