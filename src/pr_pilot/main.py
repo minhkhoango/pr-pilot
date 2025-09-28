@@ -40,7 +40,7 @@ class PRBriefing(TypedDict):
 
 def generate_prompt(diff_content: str) -> str:
     """
-    Engineers the prompt to be sent to the AI model.
+    Engineers a ruthlessly precise prompt to force high-level, structured output.
 
     Args:
         diff_content: A string containing the git diff.
@@ -49,21 +49,21 @@ def generate_prompt(diff_content: str) -> str:
         A formatted prompt string.
     """
     return f"""
-    You are PR-Pilot, an expert software engineer reviewing a pull request.
-    Your task is to analyze the following git diff and generate a structured JSON object.
+    You are PR-Pilot, an expert senior software engineer. Your task is to analyze the
+    following git diff and generate a single, valid JSON object.
 
     The JSON object must follow this exact schema:
     {{
         "summary": "A single, concise sentence summarizing the PR's core purpose.",
         "file_changes": [
             {{
-                "file_name": "Name of the file that was changed",
+                "file_name": "The full path of the file.",
                 "changes": [
                     {{
                         "type": "Added|Modified|Removed|Refactored",
-                        "item": "A description of the high-level item (e.g., `JsonStore` class, a specific function).",
+                        "item": "A high-level summary of the logical change.",
                         "details": [
-                            "A very short, bullet-point description of a sub-change (e.g., `__init__`: Loads data, `save()`: Persists data)."
+                            "[Optional] A very short sub-point for a complex item. Omit for simple items."
                         ]
                     }}
                 ]
@@ -71,16 +71,16 @@ def generate_prompt(diff_content: str) -> str:
         ],
         "risk_assessment": {{
             "level": "Low|Medium|High",
-            "reasoning": "A brief, single-sentence explanation for the assigned risk level."
+            "reasoning": "A brief, single-sentence explanation for the risk."
         }}
     }}
 
     CRITICAL RULES:
-    1.  **USE THE NESTED STRUCTURE.** For each file, describe high-level changes (like adding a class) in the `item` field, and specific sub-changes (like methods of that class) in the `details` array.
-    2.  **SUMMARIZE LOGICALLY.** Group related line-level changes. For example, instead of listing every line modified for logging, summarize it as "Integrated the `logging` module."
-    3.  **BE CONCISE.** Every description must be as short as possible. Use sentence fragments where appropriate.
-    4.  **NO CONVERSATION.** Your entire output must be ONLY the JSON object.
-    5.  **STICK TO THE FACTS.** Analyze only the provided diff.
+    1.  **CONSOLIDATE CHANGES:** For each file, group all related edits into a SINGLE logical `item`. Instead of listing 10 minor text edits, summarize them as "Refined documentation and code comments for clarity."
+    2.  **USE `details` SPARINGLY:** The `details` array is ONLY for breaking down a single, genuinely complex `item` (like a new algorithm). For simple items (e.g., "Removed: Unused example file"), `details` MUST be an empty array `[]`.
+    3.  **BE CONCISE:** The `item` and `details` fields must be short sentence fragments.
+    4.  **JSON ONLY:** Your entire output must be the raw JSON object, with no markdown, comments, or conversation.
+    5.  **FACTS ONLY:** Analyze only the provided diff.
 
     Analyze this diff:
     ```diff
@@ -153,7 +153,7 @@ def format_markdown_briefing(briefing_data: PRBriefing) -> str:
     Returns:
         A formatted markdown string.
     """
-    lines = [
+    lines: List[str] = [
         "\n---\n",
         "#### 📝 **Overall Summary**\n",
         briefing_data.get("summary", "No summary provided."),
