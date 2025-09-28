@@ -51,7 +51,7 @@ def generate_prompt(diff_content: str) -> str:
     1.  **USE THE NESTED STRUCTURE.** For each file, describe high-level changes (like adding a class) in the `item` field, and specific sub-changes (like methods of that class) in the `details` array.
     2.  **SUMMARIZE LOGICALLY.** Group related line-level changes. For example, instead of listing every line modified for logging, summarize it as "Integrated the `logging` module."
     3.  **BE CONCISE.** Every description must be as short as possible. Use sentence fragments where appropriate.
-    4.  **NO CONVERSATION.** Your entire output must be ONLY the JSON object. Do not include markdown, apologies, or any text before or after the JSON.
+    4.  **NO CONVERSATION.** Your entire output must be ONLY the JSON object.
     5.  **STICK TO THE FACTS.** Analyze only the provided diff.
 
     Analyze this diff:
