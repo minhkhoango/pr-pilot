@@ -1,12 +1,17 @@
+# action.yml
 name: 'PR-Pilot Briefing'
-description: 'Generate AI-powered PR briefings using Gemini'
+description: 'Analyzes a pull request diff and posts a summary briefing as a comment.'
+author: 'Your Name'
+
 inputs:
   github-token:
-    description: 'GitHub token for API access'
+    description: 'The GITHUB_TOKEN secret.'
     required: true
-  google-api-key:
-    description: 'Google API key for Gemini'
-    required: true
+
 runs:
   using: 'docker'
   image: 'Dockerfile'
+
+branding:
+  icon: 'radio'
+  color: 'blue'
