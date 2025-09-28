@@ -1,4 +1,4 @@
-#!/bin/sh -l
+#!/bin/bash
 
 # entrypoint.sh
 # This script orchestrates the entire action. It uses the GitHub API
