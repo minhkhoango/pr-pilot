@@ -15,8 +15,8 @@ if [ -z "$INPUT_GITHUB-TOKEN" ]; then
     exit 1
 fi
 
-if [ -z "$INPUT_GOOGLE_API_KEY" ]; then
-    echo "Error: INPUT_GOOGLE_API_KEY is not set. Please add it to your repository secrets."
+if [ -z "$GOOGLE_API_KEY" ]; then
+    echo "Error: GOOGLE_API_KEY is not set. Please add it to your repository secrets."
     exit 1
 fi
 
@@ -48,10 +48,10 @@ echo "INFO: Diff saved to pr.diff"
 # --- 3. Run the Python Engine ---
 echo "INFO: Running PR-Pilot analysis..."
 # We pass the fetched diff file to our Python script and capture its stdout.
-# The INPUT_GOOGLE_API_KEY is passed as an environment variable to the python process.
+# The GOOGLE_API_KEY is passed as an environment variable to the python process.
 # We add a pre-comment header to the captured output.
 BRIEFING_HEADER="### 🚀 PR-Pilot Analysis (powered by Gemini)\n\n"
-BRIEFING_BODY=$(GOOGLE_API_KEY=$INPUT_GOOGLE_API_KEY python /app/src/pr_pilot/main.py --diff-file pr.diff)
+BRIEFING_BODY=$(GOOGLE_API_KEY=$GOOGLE_API_KEY python /app/src/pr_pilot/main.py --diff-file pr.diff)
 
 # Combine header and body
 BRIEFING_MARKDOWN="${BRIEFING_HEADER}${BRIEFING_BODY}"
