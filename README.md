@@ -34,7 +34,6 @@ By analyzing the git diff, PR-Pilot provides objective, factual summaries — so
 
 
 ### PR-Pilot Briefing  
-*A high-level summary of changes to help you start your review.*  
 
 ---
 

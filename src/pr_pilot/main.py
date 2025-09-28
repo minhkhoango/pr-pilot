@@ -109,7 +109,9 @@ def generate_briefing(diff_content: str, api_key: str | None) -> Dict[str, Any]:
         return json.loads(cleaned_response)
     except Exception as e:
         logging.error(f"AI model communication failed: {e}")
-        logging.error(f"Received raw response: {response.text if response else 'No response'}")
+        logging.error(
+            f"Received raw response: {response.text if response else 'No response'}"
+        )
         raise
 
 
@@ -154,7 +156,9 @@ def main() -> None:
     """
     Main function to run the script.
     """
-    logging.basicConfig(level=logging.INFO, stream=sys.stderr, format='%(levelname)s: %(message)s')
+    logging.basicConfig(
+        level=logging.INFO, stream=sys.stderr, format="%(levelname)s: %(message)s"
+    )
     # Load environment variables from .env file
     load_dotenv()
 

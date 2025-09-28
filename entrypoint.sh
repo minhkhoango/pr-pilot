@@ -68,7 +68,7 @@ echo "INFO: Running PR-Pilot analysis..."
 # We pass the fetched diff file to our Python script and capture its stdout.
 # The GOOGLE_API_KEY is passed as an environment variable to the python process.
 # We add a pre-comment header to the captured output.
-BRIEFING_HEADER="### 🚀 PR-Pilot Analysis\n\n"
+BRIEFING_HEADER="### 🚀 PR-Pilot Analysis"
 BRIEFING_BODY=$(GOOGLE_API_KEY=$GOOGLE_API_KEY python /app/src/pr_pilot/main.py --diff-file pr.diff)
 
 # Combine header and body
