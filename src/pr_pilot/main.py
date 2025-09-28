@@ -31,14 +31,15 @@ def generate_prompt(diff_content: str) -> str:
 
     The JSON object must follow this exact schema:
     {{
-      "summary": "A single, concise sentence summarizing the PR's core purpose.",
-      "file_changes": [
-        {{
-          "file_name": "The full path of the file that was changed.",
-          "changes": [
-            "A high-level summary of the logical changes in this file. Start with 'Added:', 'Modified:', 'Removed:', or 'Refactored:'."
-          ]
-        }}
+        "summary": "A single, concise sentence summarizing the PR's core purpose.",
+        "changes": [
+            {{
+                "type": "Added|Modified|Removed|Refactored",
+                "item": "A description of the high-level item (e.g., `JsonStore` class, a specific function).",
+                "details": [
+                    "A very short, bullet-point description of a sub-change (e.g., `__init__`: Loads data, `save()`: Persists data)."
+                ]
+            }}
       ],
       "risk_assessment": {{
         "level": "Low|Medium|High",
@@ -47,10 +48,11 @@ def generate_prompt(diff_content: str) -> str:
     }}
 
     CRITICAL RULES:
-    1.  **SUMMARIZE LOGICALLY.** Group related line-level changes into a single, high-level summary. For example, instead of listing every line modified to add logging, summarize it as "Integrated the `logging` module for structured error and info reporting."
-    2.  **BE CONCISE.** Every description must be as short as possible. No long paragraphs. Use sentence fragments where appropriate.
-    3.  **NO CONVERSATION.** Your entire output must be ONLY the JSON object. Do not include markdown, apologies, or any text before or after the JSON.
-    4.  **STICK TO THE FACTS.** Analyze only the provided diff. Do not infer intent or functionality beyond the code shown.
+    1.  **USE THE NESTED STRUCTURE.** For each file, describe high-level changes (like adding a class) in the `item` field, and specific sub-changes (like methods of that class) in the `details` array.
+    2.  **SUMMARIZE LOGICALLY.** Group related line-level changes. For example, instead of listing every line modified for logging, summarize it as "Integrated the `logging` module."
+    3.  **BE CONCISE.** Every description must be as short as possible. Use sentence fragments where appropriate.
+    4.  **NO CONVERSATION.** Your entire output must be ONLY the JSON object. Do not include markdown, apologies, or any text before or after the JSON.
+    5.  **STICK TO THE FACTS.** Analyze only the provided diff.
 
     Analyze this diff:
     ```diff
@@ -100,7 +102,7 @@ def generate_briefing(diff_content: str, api_key: str | None) -> Dict[str, Any]:
     response = None
     try:
         response = model.generate_content(prompt)  # type: ignore
-        # The response text might be wrapped in ```json ... ```, so we clean it.
+        # Clean the response to ensure it's valid JSON
         cleaned_response = (
             response.text.strip().replace("```json", "").replace("```", "").strip()
         )
@@ -137,9 +139,14 @@ def format_markdown_briefing(briefing_data: Dict[str, Any]) -> str:
     else:
         for file_change in file_changes:
             lines.append(f"- **`{file_change.get('file_name', 'Unknown file')}`**")
-            changes = file_change.get("changes", [])
+            changes: List[Dict[str, Any]] = file_change.get("changes", [])
             for change in changes:
-                lines.append(f"  - {change}")
+                change_type = change.get("type", "")
+                item = change.get("item", "No item description.")
+                lines.append(f"  - **{change_type}:** {item}")
+                details = change.get("details", [])
+                for detail in details:
+                    lines.append(f"    - {detail}")
 
     lines.append("\n#### 🚨 **Risk Assessment**\n")
     risk = briefing_data.get("risk_assessment", {})
