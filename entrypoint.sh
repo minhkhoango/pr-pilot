@@ -15,8 +15,15 @@ set -e # Exit immediately if a command exits with a non-zero status.
 echo "DEBUG: Available INPUT_ environment variables:"
 env | grep "^INPUT_" || echo "No INPUT_ variables found"
 
-if [ -z "$INPUT_GITHUB_TOKEN" ]; then
-    echo "Error: INPUT_GITHUB_TOKEN is not set."
+# Check for GitHub token in both INPUT_GITHUB_TOKEN and GITHUB_TOKEN
+if [ -n "$INPUT_GITHUB_TOKEN" ]; then
+    GITHUB_AUTH_TOKEN="$INPUT_GITHUB_TOKEN"
+    echo "INFO: Using INPUT_GITHUB_TOKEN for authentication"
+elif [ -n "$GITHUB_TOKEN" ]; then
+    GITHUB_AUTH_TOKEN="$GITHUB_TOKEN"
+    echo "INFO: Using GITHUB_TOKEN for authentication"
+else
+    echo "Error: Neither INPUT_GITHUB_TOKEN nor GITHUB_TOKEN is set."
     echo "DEBUG: All environment variables:"
     env | sort
     exit 1
@@ -46,7 +53,7 @@ echo "INFO: Fetching diff from ${PR_URL}.diff"
 # -o saves the output to a file named 'pr.diff'.
 HTTP_CODE=$(curl -s -L -w "%{http_code}" -o pr.diff \
   -H "Accept: application/vnd.github.v3.diff" \
-  -H "Authorization: Bearer ${INPUT_GITHUB_TOKEN}" \
+  -H "Authorization: Bearer ${GITHUB_AUTH_TOKEN}" \
   "${PR_URL}")
 
 if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
@@ -78,7 +85,7 @@ JSON_PAYLOAD=$(echo "$BRIEFING_MARKDOWN" | jq -R --slurp '{body: .}')
 HTTP_STATUS=$(curl -s -L -w "%{http_code}" \
   -X POST \
   -H "Accept: application/vnd.github+json" \
-  -H "Authorization: Bearer ${INPUT_GITHUB_TOKEN}" \
+  -H "Authorization: Bearer ${GITHUB_AUTH_TOKEN}" \
   -H "Content-Type: application/json" \
   "${PR_COMMENTS_URL}" \
   --data-raw "$JSON_PAYLOAD")
