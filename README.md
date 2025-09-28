@@ -33,35 +33,30 @@ By analyzing the git diff, PR-Pilot provides objective, factual summaries — so
 ## Example Briefing  
 
 
-### PR-Pilot Briefing  
-*A high-level summary of changes to help you start your review.*  
-
+### 🚀 PR-Pilot Analysis
 ---
 
-#### Overall Summary  
-This PR introduces a new `JsonStore` class for handling session data with JSON persistence.  
-It also refactors `BaseStore` to be more generic and updates `main.py` to use this new storage mechanism.
+#### 📝 **Overall Summary**
 
----
+Refines PR-Pilot's prompt, type definitions, and error handling for more structured and robust AI-driven pull request analysis.
 
-#### 🗂️ File-by-File Breakdown  
-- **`src/storage.py`**  
-  - **Added:** `JsonStore` class  
-    - `__init__`: Loads initial data and sets file path  
-    - `set(key, value)`: Adds/updates key-value pairs  
-    - `get(key)`: Retrieves a value by key  
-    - `save()`: Persists session data to JSON  
-  - **Modified:** `BaseStore` simplified into a minimal abstract template  
 
-- **`src/main.py`**  
-  - **Modified:** Now instantiates `JsonStore` for session management  
+#### 🗂️ **File-by-File Breakdown**
 
----
+- **`.env.example`**
+  - **Removed:** Removed unused .env.example file.
+- **`README.md`**
+  - **Modified:** Cleaned up and standardized markdown formatting.
+- **`assets/sample.diff`**
+  - **Removed:** Removed example diff file.
+- **`entrypoint.sh`**
+  - **Modified:** Simplified the PR-Pilot briefing header.
+- **`src/pr_pilot/main.py`**
+  - **Modified:** Enhanced AI prompt for structured JSON output and stricter adherence to rules.
+    - Introduced explicit type definitions for PR briefing components (RiskAssessment, ChangeDetail, FileChange, PRBriefing).
+    - Improved error handling for file loading and AI API communication.
+    - Added logging for better diagnostics.
 
-#### 🚨 Risk Assessment  
-- **Medium Risk:** `JsonStore.save()` writes directly to disk with no error handling. Disk failures or permission issues could cause data loss.  
-- **Low Risk:** Swap in `main.py` is straightforward; as long as `JsonStore` follows the expected interface, regression risk is minimal.  
+#### 🚨 **Risk Assessment**
 
----
-
-BRUH FOR TESTING !!
+- **Low Risk:** Changes primarily focus on prompt engineering, type safety, and logging, with no direct impact on core functionality.
