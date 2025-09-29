@@ -11,3 +11,8 @@ pycache/
 # Virtual environment
 .venv/
 venv/
+
+# Local testing
+test_data/
+run_all_tests.py
+output.md
