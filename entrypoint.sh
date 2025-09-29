@@ -247,7 +247,7 @@ info "Running PR-Pilot analysis..."
 # We add a pre-comment header to the captured output.
 
 # Run the Python script with timeout and error handling
-if ! BRIEFING_BODY=$(timeout 300 GOOGLE_API_KEY="$GOOGLE_API_KEY" python /app/src/pr_pilot/main.py --diff-file pr.diff 2>&1); then
+if ! BRIEFING_BODY=$(timeout 300 env GOOGLE_API_KEY="$GOOGLE_API_KEY" python /app/src/pr_pilot/main.py --diff-file pr.diff 2>&1); then
     EXIT_CODE=$?
     if [ $EXIT_CODE -eq 124 ]; then
         die "Python script timed out after 5 minutes. This might indicate an issue with the AI service or a very large diff."
