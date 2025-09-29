@@ -110,13 +110,14 @@ make_github_request() {
     local url="$1"
     local method="${2:-GET}"
     local data="${3:-}"
+    local accept_header="${4:-application/vnd.github+json}"
     local timeout=30
 
     local curl_args=(
         -s -L
         --max-time "$timeout"
         -w "%{http_code}"
-        -H "Accept: application/vnd.github+json"
+        -H "Accept: $accept_header"
         -H "Authorization: Bearer ${GITHUB_AUTH_TOKEN}"
         -H "User-Agent: PR-Pilot/1.0"
     )
@@ -135,26 +136,38 @@ make_github_request() {
     local http_code
     if [ "$method" = "POST" ] && [ -n "$data" ]; then
         response=$(curl "${curl_args[@]}" "$url" --data-raw "$data" 2>/dev/null || echo "curl_error")
-        http_code=$(echo "$response" | tail -c 3 2>/dev/null || echo "000")
     else
         response=$(curl "${curl_args[@]}" "$url" 2>/dev/null || echo "curl_error")
-        http_code=$(echo "$response" | tail -c 3 2>/dev/null || echo "000")
     fi
 
     # Handle curl failures
-    if [ "$http_code" = "000" ] || [ "$response" = "curl_error" ]; then
+    if [ "$response" = "curl_error" ]; then
         error "GitHub API request failed - network error or timeout"
+        return 1
+    fi
+
+    # Extract HTTP code (last 3 characters) and response body
+    if [ ${#response} -ge 3 ]; then
+        http_code="${response: -3}"
+        local response_body="${response%???}"
+    else
+        http_code="000"
+        local response_body="$response"
+    fi
+
+    # Validate HTTP code is numeric
+    if ! [[ "$http_code" =~ ^[0-9]{3}$ ]]; then
+        error "GitHub API request failed - invalid HTTP response format"
         return 1
     fi
 
     # Check HTTP status code
     if [ "$http_code" -ge 200 ] && [ "$http_code" -lt 300 ]; then
-        # Extract response body (everything except the last 3 characters which are the status code)
-        echo "$response" | head -c -4
+        echo "$response_body"
         return 0
     else
         error "GitHub API request failed with HTTP $http_code"
-        echo "$response" | head -c -4
+        echo "$response_body"
         return 1
     fi
 }
@@ -208,14 +221,14 @@ info "PR Comments URL: $PR_COMMENTS_URL"
 
 # --- 2. Fetch the PR Diff ---
 
-info "Fetching diff from ${PR_URL}"
+info "Fetching diff from ${PR_URL}.diff"
 # Use curl to request the diff format for the PR.
 # -H adds the necessary headers for authentication and specifying the format.
 # -L follows redirects.
 # -o saves the output to a file named 'pr.diff'.
 
 # Use the improved GitHub request function with retry logic
-if ! retry make_github_request "${PR_URL}" "GET" > pr.diff; then
+if ! retry make_github_request "${PR_URL}.diff" "GET" "" "application/vnd.github.v3.diff" > pr.diff; then
     die "Failed to fetch PR diff after retries. This might indicate GitHub API issues or network problems."
 fi
 
@@ -278,7 +291,7 @@ if ! validate_json "$JSON_PAYLOAD"; then
 fi
 
 # Use the improved GitHub request function with retry logic for posting
-if ! retry make_github_request "${PR_COMMENTS_URL}" "POST" "$JSON_PAYLOAD" > /dev/null; then
+if ! retry make_github_request "${PR_COMMENTS_URL}" "POST" "$JSON_PAYLOAD" "application/vnd.github+json" > /dev/null; then
     die "Failed to post briefing after retries. This might indicate GitHub API issues, rate limiting, or permission problems."
 fi
 
