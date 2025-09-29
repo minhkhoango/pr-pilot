@@ -247,12 +247,14 @@ info "Running PR-Pilot analysis..."
 # We add a pre-comment header to the captured output.
 
 # Run the Python script with timeout and error handling
-if ! BRIEFING_BODY=$(timeout 300 env GOOGLE_API_KEY="$GOOGLE_API_KEY" python /app/src/pr_pilot/main.py --diff-file pr.diff 2>&1); then
+if ! BRIEFING_BODY=$(timeout 300 env GOOGLE_API_KEY="$GOOGLE_API_KEY" python /app/src/pr_pilot/main.py --diff-file pr.diff 2>/dev/null); then
     EXIT_CODE=$?
     if [ $EXIT_CODE -eq 124 ]; then
         die "Python script timed out after 5 minutes. This might indicate an issue with the AI service or a very large diff."
     else
-        die "Python script failed with exit code $EXIT_CODE. Output: $BRIEFING_BODY"
+        # If it failed, run again with stderr to capture error details
+        ERROR_OUTPUT=$(timeout 300 env GOOGLE_API_KEY="$GOOGLE_API_KEY" python /app/src/pr_pilot/main.py --diff-file pr.diff 2>&1 || true)
+        die "Python script failed with exit code $EXIT_CODE. Output: $ERROR_OUTPUT"
     fi
 fi
 
@@ -261,11 +263,12 @@ if [ -z "$BRIEFING_BODY" ]; then
     die "Python script returned empty response. The AI service might be unavailable or the diff might be invalid."
 fi
 
-# Clean up the response (remove any control characters or excessive whitespace)
-BRIEFING_BODY=$(echo "$BRIEFING_BODY" | tr -d '\000-\008\013-\037' | sed 's/[[:space:]]*$//')
+# Clean up the response (remove log lines and control characters)
+# Remove lines that start with typical log prefixes
+BRIEFING_BODY=$(echo "$BRIEFING_BODY" | grep -v "^INFO:" | grep -v "^WARNING:" | grep -v "^ERROR:" | grep -v "^E[0-9]" | grep -v "^W[0-9]" | tr -d '\000-\008\013-\037' | sed 's/[[:space:]]*$//')
 
 if [ -z "$BRIEFING_BODY" ]; then
-    die "Python script returned only whitespace/control characters. This might indicate an issue with the AI response format."
+    die "Python script returned only log messages or whitespace. This might indicate an issue with the AI response format."
 fi
 
 BRIEFING_HEADER="### 🚀 PR-Pilot Analysis
@@ -288,6 +291,12 @@ fi
 # Validate JSON payload
 if ! validate_json "$JSON_PAYLOAD"; then
     die "Invalid JSON payload created. This should not happen - please check the briefing content."
+fi
+
+# Check payload size (GitHub comment limit is around 65,536 characters)
+PAYLOAD_SIZE=$(echo "$JSON_PAYLOAD" | wc -c)
+if [ "$PAYLOAD_SIZE" -gt 60000 ]; then
+    warn "JSON payload is quite large ($PAYLOAD_SIZE chars). This might cause GitHub API issues."
 fi
 
 # Use the improved GitHub request function with retry logic for posting
