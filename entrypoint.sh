@@ -189,14 +189,21 @@ check_dependencies
 info "Available INPUT_ environment variables:"
 env | grep "^INPUT_" || info "No INPUT_ variables found"
 
-# Check for GitHub token in both INPUT_GITHUB-TOKEN and GITHUB_TOKEN
+# Check for GitHub token in multiple possible environment variables
 # Note: GitHub Actions converts input 'github-token' to environment variable 'INPUT_GITHUB-TOKEN'
-if [ -n "${INPUT_GITHUB-TOKEN:-}" ]; then
-    GITHUB_AUTH_TOKEN="$INPUT_GITHUB-TOKEN"
+# but bash cannot access variables with hyphens using normal syntax, so we use printenv
+
+# Try to get the GitHub token from various possible sources
+GITHUB_AUTH_TOKEN=""
+
+# First try the hyphenated input variable using printenv (since bash can't access it directly)
+if GITHUB_AUTH_TOKEN=$(printenv "INPUT_GITHUB-TOKEN" 2>/dev/null) && [ -n "$GITHUB_AUTH_TOKEN" ]; then
     info "Using INPUT_GITHUB-TOKEN for authentication"
+# Fallback to underscore version (legacy)
 elif [ -n "${INPUT_GITHUB_TOKEN:-}" ]; then
     GITHUB_AUTH_TOKEN="$INPUT_GITHUB_TOKEN"
     info "Using INPUT_GITHUB_TOKEN for authentication (legacy)"
+# Fallback to global GITHUB_TOKEN
 elif [ -n "${GITHUB_TOKEN:-}" ]; then
     GITHUB_AUTH_TOKEN="$GITHUB_TOKEN"
     info "Using GITHUB_TOKEN for authentication"
