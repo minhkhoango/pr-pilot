@@ -134,11 +134,7 @@ make_github_request() {
     # Execute the request
     local response
     local http_code
-    if [ "$method" = "POST" ] && [ -n "$data" ]; then
-        response=$(curl "${curl_args[@]}" "$url" --data-raw "$data" 2>/dev/null || echo "curl_error")
-    else
-        response=$(curl "${curl_args[@]}" "$url" 2>/dev/null || echo "curl_error")
-    fi
+    response=$(curl "${curl_args[@]}" "$url" 2>/dev/null || echo "curl_error")
 
     # Handle curl failures
     if [ "$response" = "curl_error" ]; then
@@ -167,7 +163,18 @@ make_github_request() {
         return 0
     else
         error "GitHub API request failed with HTTP $http_code"
-        echo "$response_body"
+        error "Response body: $response_body"
+        # For debugging, also log the request details (but mask sensitive data)
+        error "Request URL: $url"
+        error "Request method: $method"
+        if [ -n "$data" ]; then
+            # Log first 200 characters of data to avoid exposing full tokens
+            local data_preview="${data:0:200}"
+            if [ ${#data} -gt 200 ]; then
+                data_preview="${data_preview}..."
+            fi
+            error "Request data preview: $data_preview"
+        fi
         return 1
     fi
 }
@@ -182,15 +189,24 @@ check_dependencies
 info "Available INPUT_ environment variables:"
 env | grep "^INPUT_" || info "No INPUT_ variables found"
 
-# Check for GitHub token in both INPUT_GITHUB_TOKEN and GITHUB_TOKEN
-if [ -n "${INPUT_GITHUB_TOKEN:-}" ]; then
+# Check for GitHub token in both INPUT_GITHUB-TOKEN and GITHUB_TOKEN
+# Note: GitHub Actions converts input 'github-token' to environment variable 'INPUT_GITHUB-TOKEN'
+if [ -n "${INPUT_GITHUB-TOKEN:-}" ]; then
+    GITHUB_AUTH_TOKEN="$INPUT_GITHUB-TOKEN"
+    info "Using INPUT_GITHUB-TOKEN for authentication"
+elif [ -n "${INPUT_GITHUB_TOKEN:-}" ]; then
     GITHUB_AUTH_TOKEN="$INPUT_GITHUB_TOKEN"
-    info "Using INPUT_GITHUB_TOKEN for authentication"
+    info "Using INPUT_GITHUB_TOKEN for authentication (legacy)"
 elif [ -n "${GITHUB_TOKEN:-}" ]; then
     GITHUB_AUTH_TOKEN="$GITHUB_TOKEN"
     info "Using GITHUB_TOKEN for authentication"
 else
-    die "Neither INPUT_GITHUB_TOKEN nor GITHUB_TOKEN is set. Please configure your GitHub token in repository secrets."
+    die "No GitHub token found. Please ensure github-token input is set or GITHUB_TOKEN is available."
+fi
+
+# Validate the token is not empty
+if [ -z "$GITHUB_AUTH_TOKEN" ]; then
+    die "GitHub authentication token is empty. Please check your token configuration."
 fi
 
 if [ -z "${GOOGLE_API_KEY:-}" ]; then
@@ -283,7 +299,8 @@ info "Posting briefing to ${PR_COMMENTS_URL}"
 
 # We need to format the markdown content into a JSON payload.
 # The `body` key contains our comment.
-JSON_PAYLOAD=$(echo "$BRIEFING_MARKDOWN" | jq -R --slurp '{body: .}' 2>/dev/null)
+# Use jq to properly escape the content and create valid JSON
+JSON_PAYLOAD=$(printf '%s' "$BRIEFING_MARKDOWN" | jq -R -s '{body: .}' 2>/dev/null)
 if [ $? -ne 0 ] || [ -z "$JSON_PAYLOAD" ]; then
     die "Failed to create JSON payload. This might indicate an issue with the briefing content or jq command."
 fi
@@ -293,6 +310,9 @@ if ! validate_json "$JSON_PAYLOAD"; then
     die "Invalid JSON payload created. This should not happen - please check the briefing content."
 fi
 
+# Debug: Log payload structure (first 200 chars to avoid exposing full content)
+info "JSON payload preview: ${JSON_PAYLOAD:0:200}..."
+
 # Check payload size (GitHub comment limit is around 65,536 characters)
 PAYLOAD_SIZE=$(echo "$JSON_PAYLOAD" | wc -c)
 if [ "$PAYLOAD_SIZE" -gt 60000 ]; then
@@ -300,8 +320,15 @@ if [ "$PAYLOAD_SIZE" -gt 60000 ]; then
 fi
 
 # Use the improved GitHub request function with retry logic for posting
-if ! retry make_github_request "${PR_COMMENTS_URL}" "POST" "$JSON_PAYLOAD" "application/vnd.github+json" > /dev/null; then
-    die "Failed to post briefing after retries. This might indicate GitHub API issues, rate limiting, or permission problems."
+GITHUB_RESPONSE=""
+if ! GITHUB_RESPONSE=$(retry make_github_request "${PR_COMMENTS_URL}" "POST" "$JSON_PAYLOAD" "application/vnd.github+json" 2>&1); then
+    # Try to extract useful error information from the response
+    if echo "$GITHUB_RESPONSE" | grep -q "message"; then
+        ERROR_MSG=$(echo "$GITHUB_RESPONSE" | jq -r '.message // "Unknown error"' 2>/dev/null || echo "Could not parse error message")
+        die "Failed to post briefing after retries. GitHub API error: $ERROR_MSG"
+    else
+        die "Failed to post briefing after retries. This might indicate GitHub API issues, rate limiting, or permission problems. Response: $GITHUB_RESPONSE"
+    fi
 fi
 
 info "PR-Pilot briefing posted successfully!"
