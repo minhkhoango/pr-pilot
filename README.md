@@ -2,6 +2,8 @@
 
 PR-Pilot is a GitHub Action that acts as an **AI Intelligence Officer** for your code reviews. It automatically analyzes pull requests and posts a structured, high-signal briefing comment, giving reviewers instant context so they can focus on what matters.
 
+To quickly try out pr-pilot, go to https://github.com/minhkhoango/pr-pilot-sandbox and make a simple pull request!
+
 <img src="assets/image.png" alt="PR-Pilot GitHub Action Demo" width="600">
 
 ## The Problem: Review Overload
