@@ -1,0 +1,7 @@
+{
+  "title": "docs: refine README.md",
+  "body": "Link the README's motivation section to the Hacker News thread that inspired the project, and trim the 'performance theatre' aside so the description reads tighter.",
+  "commit_messages": [
+    "docs: refine README.md"
+  ]
+}

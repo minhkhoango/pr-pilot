@@ -1,0 +1,7 @@
+{
+  "title": "fix: use nested file_changes schema and add strict TypedDicts",
+  "body": "The Markdown formatter expected a nested `file_changes` shape, but the prompt schema still emitted a flat `changes` key, so briefings rendered with missing file sections. Introduce PRBriefing / FileChange / ChangeDetail / RiskAssessment TypedDicts so the response shape is explicit and the formatter and prompt can no longer drift apart.",
+  "commit_messages": [
+    "fix: using wrong dict key, implement more robust type checking"
+  ]
+}

@@ -1,5 +1,7 @@
 # Byte-compiled
 pycache/
+__pycache__/
+*.pyc
 
 # Unit test
 .cache

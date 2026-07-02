@@ -1,0 +1,7 @@
+{
+  "title": "chore: trim unused files and tidy the prompt template",
+  "body": "Remove artifacts that shipped by accident (assets/sample.diff and the stale .env.example) and shorten the prompt template so the action's footprint stays minimal. Touches README.md, entrypoint.sh, and src/pr_pilot/main.py alongside the deletions.",
+  "commit_messages": [
+    "chore: refine template, trim out unused file like sample.diff or .env.example"
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "title": "fix: request the unified diff, not JSON, when fetching a PR",
+  "body": "In production the action fetched the PR URL without the `.diff` suffix and with the JSON Accept header, so GitHub returned PR JSON instead of a unified diff and the model summarized garbage. Parameterize the Accept header, append `.diff` to the fetch URL, and harden HTTP-code extraction so a malformed response fails loudly instead of silently.",
+  "commit_messages": [
+    "fix: missing .diff suffix, and wrong accept header, and others."
+  ]
+}

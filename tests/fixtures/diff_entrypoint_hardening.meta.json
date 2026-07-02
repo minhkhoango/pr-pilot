@@ -1,0 +1,7 @@
+{
+  "title": "feat: make entrypoint.sh production-resilient",
+  "body": "Early runs of the action failed intermittently in CI: a transient GitHub API error aborted the whole run, hangs had no timeout, and a missing `jq` or `curl` produced confusing failures. Add retry-with-backoff around GitHub requests, a per-request timeout, an up-front dependency check, and clearer error/exit handling so a flaky network no longer drops a PR review.",
+  "commit_messages": [
+    "feat: implement more robust entrypoint.sh, adding rety logic, timeout, dependancy check, and more"
+  ]
+}

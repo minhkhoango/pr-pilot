@@ -1,0 +1,102 @@
+{
+  "model": "gemini-2.5-flash-lite",
+  "judge_model": "gemini-2.5-flash",
+  "n_fixtures": 5,
+  "fixtures": [
+    {
+      "stem": "diff_entrypoint_accept_header",
+      "files_in_diff": 1,
+      "symbols_in_diff": 2,
+      "diff_only": {
+        "coverage": 0.6667,
+        "judge_score": 3,
+        "judge_reason": "The summary clearly describes the mechanical changes made to fetch diffs correctly but fails to articulate the underlying problem that necessitated these changes, specifically the prior issue of fetching JSON instead of diffs and the resulting 'garbage summaries'.",
+        "summary_chars": 834
+      },
+      "with_context": {
+        "coverage": 0.6667,
+        "judge_score": 4,
+        "judge_reason": "The summary clearly identifies the problem of fetching JSON instead of a diff and the need for robust error handling, but omits the specific impact of 'model summarizing garbage' mentioned in the true intent.",
+        "summary_chars": 1284
+      }
+    },
+    {
+      "stem": "diff_entrypoint_hardening",
+      "files_in_diff": 1,
+      "symbols_in_diff": 10,
+      "diff_only": {
+        "coverage": 1.0,
+        "judge_score": 2,
+        "judge_reason": "The summary details what was changed (e.g., added retry, timeout, dependency checks) but largely fails to explain the specific problems these changes address, such as intermittent GitHub API errors, hangs, or confusing failures from missing tools.",
+        "summary_chars": 1660
+      },
+      "with_context": {
+        "coverage": 1.0,
+        "judge_score": 5,
+        "judge_reason": "The overall summary clearly articulates the motivation for the changes, stating the goal of production-resilience and explicitly linking the added features to preventing transient failures from aborting the action.",
+        "summary_chars": 1748
+      }
+    },
+    {
+      "stem": "diff_multifile_cleanup",
+      "files_in_diff": 5,
+      "symbols_in_diff": 6,
+      "diff_only": {
+        "coverage": 0.5455,
+        "judge_score": 3,
+        "judge_reason": "The summary clearly explains the motivation for removing unused files, but it fails to articulate the 'why' behind the prompt template adjustments and other modifications, which were intended to shorten the template and minimize the action's footprint.",
+        "summary_chars": 807
+      },
+      "with_context": {
+        "coverage": 0.5455,
+        "judge_score": 5,
+        "judge_reason": "The summary explicitly states the core motivation 'To minimize the action's footprint' in the overall summary and provides clear 'why' explanations for each file change (e.g., 'unused', 'redundant', 'shortened').",
+        "summary_chars": 830
+      }
+    },
+    {
+      "stem": "diff_readme_docs",
+      "files_in_diff": 1,
+      "symbols_in_diff": 1,
+      "diff_only": {
+        "coverage": 1.0,
+        "judge_score": 2,
+        "judge_reason": "The summary narrates what was changed (added a link, refined description) but largely fails to explain the motivation or purpose behind these changes, such as why the description needed refining or the significance of the Hacker News link.",
+        "summary_chars": 500
+      },
+      "with_context": {
+        "coverage": 0.5,
+        "judge_score": 5,
+        "judge_reason": "The summary clearly articulates the motivation for linking the Hacker News thread and the reason for trimming the 'performance theatre' aside, making the purpose of the changes fully understandable.",
+        "summary_chars": 672
+      }
+    },
+    {
+      "stem": "diff_typeddict_refactor",
+      "files_in_diff": 1,
+      "symbols_in_diff": 10,
+      "diff_only": {
+        "coverage": 0.6364,
+        "judge_score": 2,
+        "judge_reason": "The summary explains *what* was changed (adding type hints and TypedDicts) and a general benefit (type safety), but completely misses the specific problem it solves (missing file sections due to schema mismatch) and the motivation to prevent future drift.",
+        "summary_chars": 760
+      },
+      "with_context": {
+        "coverage": 0.7273,
+        "judge_score": 5,
+        "judge_reason": "The summary clearly articulates the problem (missing file sections due to schema mismatch) and how the solution (TypedDicts and schema alignment) directly addresses it, making the motivation fully understandable without needing to consult the diff.",
+        "summary_chars": 1508
+      }
+    }
+  ],
+  "diff_only": {
+    "mean_coverage": 0.7697,
+    "mean_judge_score": 2.4
+  },
+  "with_context": {
+    "mean_coverage": 0.6879,
+    "mean_judge_score": 4.8
+  },
+  "coverage_delta_points": -8.18,
+  "judge_delta": 2.4
+}
