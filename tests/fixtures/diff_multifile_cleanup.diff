@@ -1,0 +1,104 @@
+commit 7ad4d34e539d4ebd5e6bb654910b3450652628a6
+Author: Khoa Ngo <ngominhkhoa2006@gmail.com>
+Date:   Sun Sep 28 11:13:27 2025 -0400
+
+    chore: refine template, trim out unused file like sample.diff or .env.example
+
+diff --git a/.env.example b/.env.example
+deleted file mode 100644
+index 02bb811..0000000
+--- a/.env.example
++++ /dev/null
+@@ -1,4 +0,0 @@
+-# .env
+-
+-# Get Gemini API key at https://aistudio.google.com/app/apikey
+-GOOGLE_API_KEY="YOUR_API_KEY_HERE"
+\ No newline at end of file
+diff --git a/README.md b/README.md
+index 2a9fe5f..f3b8279 100644
+--- a/README.md
++++ b/README.md
+@@ -34,7 +34,6 @@ By analyzing the git diff, PR-Pilot provides objective, factual summaries — so
+ 
+ 
+ ### PR-Pilot Briefing  
+-*A high-level summary of changes to help you start your review.*  
+ 
+ ---
+ 
+diff --git a/assets/sample.diff b/assets/sample.diff
+deleted file mode 100644
+index fd4a179..0000000
+--- a/assets/sample.diff
++++ /dev/null
+@@ -1,29 +0,0 @@
+-# sample.diff
+-diff --git a/requests/sessions.py b/requests/sessions.py
+-index e34199c..8250f83 100644
+---- a/requests/sessions.py
+-+++ b/requests/sessions.py
+-@@ -382,6 +382,9 @@ class Session(SessionRedirectMixin):
+-         method = to_native_string(method.upper())
+- 
+-         # Handle case where Content-Type is not specified in headers
+-+        if 'Content-Type' not in (request.headers or {}):
+-+            request.headers['Content-Type'] = None
+-+
+-         # Create the Request.
+-         req = Request(
+-             method=method,
+-diff --git a/requests/structures.py b/requests/structures.py
+-index 9b798b7..9953503 100644
+---- a/requests/structures.py
+-+++ b/requests/structures.py
+-@@ -52,6 +52,9 @@ class CaseInsensitiveDict(MutableMapping):
+-     def __setitem__(self, key, value):
+-         # Use the lowercased key for lookups, but store the actual
+-         # key alongside the value.
+-+        if value is None:
+-+            del self[key]
+-+            return
+-         self._store[key.lower()] = (key, value)
+- 
+-     def __delitem__(self, key):
+\ No newline at end of file
+diff --git a/entrypoint.sh b/entrypoint.sh
+index 38b12df..e47e34c 100644
+--- a/entrypoint.sh
++++ b/entrypoint.sh
+@@ -68,7 +68,7 @@ echo "INFO: Running PR-Pilot analysis..."
+ # We pass the fetched diff file to our Python script and capture its stdout.
+ # The GOOGLE_API_KEY is passed as an environment variable to the python process.
+ # We add a pre-comment header to the captured output.
+-BRIEFING_HEADER="### 🚀 PR-Pilot Analysis\n\n"
++BRIEFING_HEADER="### 🚀 PR-Pilot Analysis"
+ BRIEFING_BODY=$(GOOGLE_API_KEY=$GOOGLE_API_KEY python /app/src/pr_pilot/main.py --diff-file pr.diff)
+ 
+ # Combine header and body
+diff --git a/src/pr_pilot/main.py b/src/pr_pilot/main.py
+index 34181dd..7efb213 100644
+--- a/src/pr_pilot/main.py
++++ b/src/pr_pilot/main.py
+@@ -109,7 +109,9 @@ def generate_briefing(diff_content: str, api_key: str | None) -> Dict[str, Any]:
+         return json.loads(cleaned_response)
+     except Exception as e:
+         logging.error(f"AI model communication failed: {e}")
+-        logging.error(f"Received raw response: {response.text if response else 'No response'}")
++        logging.error(
++            f"Received raw response: {response.text if response else 'No response'}"
++        )
+         raise
+ 
+ 
+@@ -154,7 +156,9 @@ def main() -> None:
+     """
+     Main function to run the script.
+     """
+-    logging.basicConfig(level=logging.INFO, stream=sys.stderr, format='%(levelname)s: %(message)s')
++    logging.basicConfig(
++        level=logging.INFO, stream=sys.stderr, format="%(levelname)s: %(message)s"
++    )
+     # Load environment variables from .env file
+     load_dotenv()
+ 

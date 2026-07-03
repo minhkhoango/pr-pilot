@@ -19,4 +19,14 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.group.dev.dependencies]
 black = "^25.9.0"
+pytest = "^8.0.0"
+
+[tool.pytest.ini_options]
+# src-layout: make `pr_pilot` importable without an editable install, so the
+# suite runs the same way in CI and locally.
+pythonpath = ["src"]
+testpaths = ["tests"]
+markers = [
+    "live: exercises a real external API (Gemini); skipped unless -m live.",
+]
 
